@@ -5,14 +5,13 @@ permissions:
 
 on:
   schedule:
-    - cron: "0  1 * * 3" # at 01:00 every  Wednesday
+    - cron: "0 1 * * 3" # 每周三的凌晨 01:00
   workflow_dispatch:
 
 jobs:
   sync_latest_from_upstream:
     name: Sync latest commits from upstream repo
     runs-on: ubuntu-latest
-    if: ${{ github.event.repository.fork }}
 
     steps:
       # Step 1: run a standard checkout action
@@ -27,11 +26,18 @@ jobs:
           upstream_sync_repo: TBXark/ChatGPT-Telegram-Workers
           upstream_sync_branch: master
           target_sync_branch: master
-          target_repo_token: ${{ secrets.GITHUB_TOKEN }} # automatically generated, no need to set
-
-          # Set test_mode true to run tests instead of the true action!!
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
           test_mode: false
 
+      # Step 3: Delete specific files after successful sync
+      - name: Delete specific files after sync
+        if: success() # Only run if the sync was successful
+        run: |
+          rm -f .github/workflows/build.yml
+          rm -f .github/workflows/cloudflare.yml
+          echo "Deleted build.yml and cloudflare.yml files successfully."
+
+      # Step 4: Sync check
       - name: Sync check
         if: failure()
         run: |
